@@ -1,0 +1,31 @@
+{
+  "name": "sassmizer",
+  "version": "1.0.0",
+  "description": "A small but useful collection of Sass mixins, functions, and utilities",
+  "main": "scss/_sassmizer.scss",
+  "scripts": {
+    "test": "exit 0"
+  },
+  "files": [
+    "scss",
+    "LICENSE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sushidub/sassmizer.git"
+  },
+  "keywords": [
+    "sass",
+    "scss",
+    "sassmizer",
+    "mixin",
+    "css",
+    "pre-processer"
+  ],
+  "author": "J.Graston",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/sushidub/sassmizer/issues"
+  },
+  "homepage": "https://github.com/sushidub/sassmizer#readme"
+}

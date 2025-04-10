@@ -1,0 +1,232 @@
+@charset "UTF-8";
+// Sassmizer 1.0.0
+// https://github.com/sushidub/sassmizer
+// Copyright 2021 J.Graston
+// MIT License
+// mixins
+
+@use "sass:string";
+@use "sass:map";
+
+// Set selector to include borders & padding in its specified width attribute
+@mixin boxSize() {
+	box-sizing: border-box;
+	-webkit-box-sizing: border-box;
+	-moz-box-sizing: border-box;
+}
+
+/*
+ * @mixin breakpoint
+ * @param: breakpoint:map (optional)
+ * @param: key(s):list
+ * @return media query
+ * @usage:
+ *   $my-custom-breakpoint: sm-md;
+ *   @include sassmizer.breakpoint($my-breakpoint-map, my-custom-breakpoint) {
+ *     table-layout: fixed;
+ *     display: table;
+ *   }
+ *
+ */
+
+$default-breakpoints:                 ("xs": 320px, "sm": 576px, "sm-md": 676px, "md": 768px, "lg": 940px, "xl": 1440px, "landscape-width": 420px, "landscape-height": 420px);
+
+@mixin breakpoint($breakpoints...) {
+  $breakpoint-map: $default-breakpoints;
+
+  @each $point in $breakpoints {
+    @if $point == xs {
+      // @debug "$site-xs: #{$site-xs}";
+      @media screen and (min-width: map.get($breakpoint-map, "xs")) {
+        // min-width: 320px
+        // max-width: 576px
+        @content;
+      }
+    }
+    @else if $point == sm {
+      // @debug "$site-sm: #{$site-sm}";
+      @media screen and (min-width: map.get($breakpoint-map, "sm")) {
+        // min-width: 576px
+        @content;
+      }
+    }
+    @else if $point == sm-md {
+      // @debug "$site-sm-md: #{$site-sm-md}";
+      @media screen and (min-width: map.get($breakpoint-map, "sm-md")) and (min-height: map.get($breakpoint-map, "landscape-height")) {
+        // min-width: 676px and min-height: 415px
+        @content;
+      }
+    }
+    @else if $point == landscape {
+      // @debug "$site-landscape-width: #{$site-landscape-width}";
+      // @debug "$site-landscape-height: #{$site-landscape-height}";
+      @media screen and (min-width: map.get($breakpoint-map, "landscape-width")) and (max-height: map.get($breakpoint-map, "landscape-height")) {
+        @content;
+      }
+    }
+    @else if $point == md {
+      // @debug "$site-md: #{$site-md}";
+      @media screen and (min-width: map.get($breakpoint-map, "md")) and (min-height: map.get($breakpoint-map, "landscape-height")) {
+        // min-width: 768px and min-height: 415px
+        @content;
+      }
+    }
+    @else if $point == lg {
+      // @debug "$site-lg: #{$site-lg}";
+      @media screen and (min-width: map.get($breakpoint-map, "lg")) {
+        // min-width: 940px
+        @content;
+      }
+    }
+    @else if $point == xl {
+      // @debug "$site-xl: #{$site-xl}";
+      @media screen and (min-width: map.get($breakpoint-map, "xl")) {
+        // min-width: 1024px
+        @content;
+      }
+    }
+    @else if $point == mobile-only {
+      @media screen and (min-width: 0) and (max-width: (map.get($breakpoint-map, "md") - 1)) and (max-height: map.get($breakpoint-map, "landscape-height")) {
+        // min-width: 0 and max-width: 768px - 1
+        @content;
+      }
+      // @media screen and (min-width: $site-md) and (max-height: $site-landscape-height) {
+      //   // max-height: 415px
+      //   @content;
+      // }
+    }
+    @else if $point == desktop-only {
+      @media screen and (min-width: map.get($breakpoint-map, "md")) and (min-height: map.get($breakpoint-map, "landscape-height")) {
+        // min-width: 768px
+        @content;
+      }
+    }
+    @else {
+      @media screen and (max-width: $point) {
+        @content;
+      }
+    }
+  }
+}
+
+@mixin debug( $color:red ) {
+  border: 1px solid #{$color} !important;
+}
+
+@mixin prefix($property, $value, $prefixes: (webkit moz ms)) {
+  @each $prefix in $prefixes {
+    #{'-' + $prefix + '-' + $property}: $value;
+  }
+ 
+  // Output standard non-prefixed declaration
+  #{$property}: $value;
+}
+
+@mixin transition($props, $duration:150ms, $timing:linear, $delay:0ms) {
+  transition-property: $props;
+  transition-duration: $duration;
+  transition-timing-function: $timing;
+  transition-delay: $delay;
+  @content;
+}
+
+@mixin generateFontFamilyBlocks($styles, $family, $dir, $name, $formats, $display, $italics:true) {
+
+  $font-styles:                       $styles;
+  $font-family:                       $family;
+  $font-directory:                    $dir;
+  $font-name:                         $name;
+  $font-formats:                      $formats;
+  $font-display:                      $display;
+
+  @each $style in map_keys($font-styles) {
+    $weight: map_get($font-styles, $style);
+
+    /* #{$weight} : #{$font-family} #{$style} */
+    @font-face {
+      font-family: $font-family;
+      src: createFormatUrls($style, $formats, $font-directory, $font-name);
+      font-weight: $weight;
+      font-style: normal;
+      font-display: $font-display;
+    }
+
+    @if $style == 'Regular' {
+      $style: '';
+    }
+    
+    @if ($italics == true) {
+      /* #{$weight} : #{$font-family} #{$style}Italic */
+      @font-face {
+        font-family: $font-family;
+        src: createFormatUrls($style + Italic, $formats, $font-directory, $font-name);
+        font-weight: $weight;
+        font-style: italic;
+        font-display: $font-display;
+      }
+    }
+  }
+}
+
+// functions
+@function createFormatUrls($style, $font-formats, $font-directory, $name) {
+  $format-dir: ();
+  // format types/extensions
+  // 'woff2':'woff2'
+  // 'woff':'woff'
+  // 'truetype':'ttf'
+  // 'embedded-opentype':'eot?#iefix'
+  @each $format in map_keys($font-formats) {
+    $file-ext: map_get($font-formats, $format);
+    $format-dir: append($format-dir, url("/assets/fonts/#{$font-directory}/#{$name}-#{$style}.#{$file-ext}") format("#{$format}"), comma);
+  }
+  @return $format-dir;
+}
+
+@function adjustHSL( $color, $H:0, $S:0%, $L:0%, $A:1 ) {
+
+  @if type_of($color) == color {
+    $hue: hue($color);
+    $sat: saturation($color);
+    $light: lightness($color);
+    $alpha: alpha($color);
+
+    @if not unitless($H) {
+      @if unit($H) != deg {
+        @error "$H (hue) units need to be in degrees. Either use 'deg' as the hue unit or leave the unit off the argument all together, was '#{unit($H)}'";
+      }
+      @else if unit($H) == deg {
+        $H: str-slice(#{$H}, -(str_length(#{$H})), -4);
+      }
+    }
+
+    @if unitless($S) {
+      @error "$S (saturation) needs to be a percent %, was '#{$S}'";
+    }
+
+    @if unitless($L) {
+      @error "$L (lightness) needs to be a percent %, was '#{$L}'";
+    }
+
+    @if not unitless($A) {
+      @error "$A (alpha) argument doesn't need units. You should leave the unit off the argument, was '#{unit($A)}'";
+    }
+
+    @return hsla($hue + $H, $sat + $S, $light + $L, $A);
+
+  } @else {
+
+    @error "First argument ($color - was #{$color}) must be valid color of type [ hex, rgb(a), hsl(a) ] or a variable representing one.";
+
+  }
+}
+
+@function svgUrlWrap($encodedsvg, $color, $insertion, $code:"") {
+  $insertionLength: string.length($insertion) + 1;
+  $insertLocation: string.index($encodedsvg, $insertion) + $insertionLength;
+  $encoded-color: string.slice("#{$color}", 2);
+  $insertionString: "fill='%23#{$encoded-color}' #{$code}";
+  $transformedsvg: string.insert($encodedsvg, $insertionString, $insertLocation);
+  $svg: url("data:image/svg+xml;charset=utf8,#{$transformedsvg}");
+  @return $svg;
+}
